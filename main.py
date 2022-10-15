@@ -2,7 +2,8 @@
 import glob
 import os
 import shutil
-
+import cv2
+from PIL import Image
 
 # 按 Shift+F10 执行或将其替换为您的代码。
 # 按 双击 Shift 在所有地方搜索类、文件、工具窗口、操作和设置。
@@ -70,9 +71,66 @@ def sort_img(file_path):
 
         print(f'{hint} sorted')
 
+
 def print_hi(name):
     # 在下面的代码行中使用断点来调试脚本。
     print(f'Hi, {name}')  # 按 Ctrl+F8 切换断点。
+
+
+def change_bmp2jpg(file_path, txt_path):
+    """
+    转换名称,并且写入到txt文件里面
+    :param :
+    :return:
+    """
+    img_dir = glob.glob(os.path.join(file_path, '*'))
+    img_dir = [d for d in img_dir if os.path.isdir(d)]
+    if not os.path.exists(txt_path):
+        txt = open(txt_path, 'w')
+    else:
+        txt = open(txt_path, 'a')
+
+    for bmp_dir in img_dir:
+        filelists = glob.glob(os.path.join(bmp_dir, '*'))
+
+        for i, file in enumerate(filelists):
+            # 读图，-1为不改变图片格式，0为灰度图
+            la = file.split('/')[-3]
+            # img = cv2.imread(os.path.join(bmp_dir, file), -1)
+            img = Image.open(os.path.join(bmp_dir, file)).convert('RGB')
+            t = 0
+            if "NIR" in la and '.bmp' in file:
+                t = 1
+                newName = file.replace('.bmp', '_NIR.jpg')
+            elif "VIS" in la and '.bmp' in file:
+                t = 1
+                newName = file.replace('.bmp', '_VIS.jpg')
+
+            # cv2.imwrite(os.path.join(bmp_dir, newName), img)
+            # print('第%d张图：%s' % (i + 1, newName))
+            if t == 1:
+                img.save(os.path.join(bmp_dir, newName), format='jpeg', quality=95)
+                img.close()
+                label = file.split('/')[-2]
+                print(f'{os.path.join(bmp_dir, newName)} {label}\n')
+                # txt.write(f'{os.path.join(bmp_dir, newName)} {label}\n')
+
+    txt.close()
+
+
+def rm_img(file_path):
+    img_dir = glob.glob(os.path.join(file_path, '*'))
+    img_dir = [d for d in img_dir if os.path.isdir(d)]
+    for bmp_dir in img_dir:
+        filelists = glob.glob(os.path.join(bmp_dir, '*'))
+
+        for i, file in enumerate(filelists):
+            if '_' in file:
+                os.remove(file)
+
+        print("bmp clean over")
+
+    print("finish")
 
 
 # 按间距中的绿色按钮以运行脚本。
@@ -82,7 +140,10 @@ if __name__ == '__main__':
     path = '/home/tonnn/.nas/weijia/work/heterogeneous/VD-GAN/dataset/BUAAVISNIR'
     # split(path)
     target = [os.path.join(path, 'NIR'), os.path.join(path, 'VIS')]
+    txt_path = os.path.join(path, 'load.txt')
     for pth in target:
-        sort_img(pth)
+        # sort_img(pth)
+        change_bmp2jpg(pth, txt_path)
+        # rm_img(pth)
         print("ok---------")
 # 访问 https://www.jetbrains.com/help/pycharm/ 获取 PyCharm 帮助
